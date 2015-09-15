@@ -1,0 +1,9 @@
+name = UN Roles
+description = Roles and Permissions Required for UN.org Workflow
+package = UN Roles and Permissions
+core = 7.x
+
+dependencies[] = un_language_perms
+files[] = sites/all/modules/un_language_perms/un_language_perms.module
+
+version = "7.x-0.1"

@@ -1,0 +1,92 @@
+<?php
+/**
+ * Implementation of hook_install
+ * By Khalim Harris - 2014
+ */
+function un_roles_install() {
+  $languages = language_list();
+  $role_functions = un_language_perms_get_role_functions();
+
+  un_roles_generate_user_roles($languages, $role_functions);
+}
+
+/**
+ * Make roles available for user assignment
+ * By Khalim Harris - 2014
+ */
+function un_roles_generate_user_roles($languages, $role_functions) {
+  foreach ($languages as $lang_code => $language) {
+    foreach ($role_functions as $role_function) {
+      $generated_name = un_roles_generated_role_name($languages[$lang_code], $role_function);
+      if (!user_role_load_by_name($generated_name, $role_function)) {
+        // Add the role by Generated Name
+        $generated_role = new stdClass();
+        $generated_role->name = $generated_name;
+        if(user_role_save($generated_role)) {
+          drupal_set_message("New Role: {$generated_role->name}");
+          un_roles_assign_permission_to_role($generated_role->name, $languages[$lang_code], $role_function);
+          unset($generated_role);
+        } else {
+          drupal_set_message("New Role: {$generated_role->name} not created. There was an error", "error");
+        }
+      }
+    }
+  }
+}
+
+/**
+ *
+ *
+ */
+function un_roles_assign_permission_to_role($role_name, $language_obj, $role_function) {
+  $role_permissions = array();
+  $role_obj = user_role_load_by_name($role_name);
+  $role_permissions = array(
+    $role_name => TRUE,
+  );
+  user_role_change_permissions($role_obj->rid, $role_permissions);
+//  print_r($role_obj);
+  //print_r($language_obj);
+//  exit;
+}
+
+/**
+ * Implementation of hook_uninstall
+ * By Khalim Harris - 2014
+ */
+function un_roles_uninstall() {
+  $languages = language_list();
+  $role_functions = un_language_perms_get_role_functions();
+
+  foreach ($role_functions as $role_function) {
+    foreach ($languages as $lang_code => $language) {
+      $generated_name = un_roles_generated_role_name($languages[$lang_code], $role_function);
+      if ($role = user_role_load_by_name($generated_name, $role_function)) {
+        watchdog("UN Roles", "Deleting Role: $generated_name ({$role->rid})");
+        user_role_delete((int) $role->rid);
+        if (!$role = user_role_load_by_name($generated_name, $role_function)) {
+          drupal_set_message("Deleted Role: $generated_name");
+        }
+      }
+    }
+  }
+
+drupal_set_message("MODULE UNINSTALLED SUCCESSFULLY 'un_role'");
+}
+
+/**
+ * Implementation of hook_disable
+ * By Khalim Harris - 2014
+ */
+function un_roles_disable() {
+  drupal_set_message("'UN Roles' has been disabled - To remove the roles and permissions added by it, you MUST also UNINSTALL 'UN Roles'", "warning");
+}
+
+/**
+ * Generates the Name of a Role for UN.org Groups
+ * By Khalim Harris - 2014
+ */
+function un_roles_generated_role_name($language_obj, $function) {
+  return "{$function} {$language_obj->name}";
+}
+

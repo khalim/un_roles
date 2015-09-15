@@ -1,0 +1,16 @@
+<?php
+
+function un_roles_form_alter(&$form, &$form_state, $form_id) {
+  global $language;
+
+  $control_node_types = array("article");
+
+  if (!empty($form['type']['#value']) && in_array($form['type']['#value'], $control_node_types)) {
+    if (!user_access("Edit " . $language->name)) {
+      $form['actions']['submit']['#disabled'] = TRUE;
+    }
+  }
+
+}
+
+
